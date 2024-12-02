@@ -1,45 +1,69 @@
 %{
+#include "syntax_highlighter.hpp"
+
 #include <ncurses.h>
 #include <string>
+#include <vector>
+#include <utility>
 
-void print_token(const std::string &token, int color_pair);
+std::vector<std::pair<char, int>> colored_line; 
 
 %}
 
 %option noyywrap
 
 %%
+
+#.* { 
+    for (char c : std::string(yytext)) {
+        colored_line.emplace_back(c, COLOR_COMMENT); 
+    } 
+} 
+
 "PROGRAM"|"PROCEDURE"|"IS"|"IN"|"END"|"ENDIF"|"ELSE"|"THEN"|"DO"|"ENDWHILE"|"REPEAT"|"UNTIL"|"WHILE"|"READ"|"WRITE" { 
-    printf("KEYWORD: %s\n", yytext); 
-    return KEYWORD; 
+    for (char c : std::string(yytext)) {
+        colored_line.emplace_back(c, COLOR_KEYWORD); 
+    } 
 }
 
 "="|"!="|">"|"<"|">="|"<="|"+"|"-"|"*"|"/"|"%"|":=" { 
-    printf("OPERATOR: %s\n", yytext); 
-    return OPERATOR; 
+    for (char c : std::string(yytext)) {
+        colored_line.emplace_back(c, COLOR_OPERATOR); 
+    } 
 }
 
-"(" | ")" | "[" | "]" | "," | ";" { 
-    printf("SYMBOL: %s\n", yytext); 
-    return SYMBOL; 
+"("|")"|"["|"]"|","|";" { 
+    for (char c : std::string(yytext)) {
+        colored_line.emplace_back(c, COLOR_SYMBOL); 
+    }  
 }
 
-[a-zA-Z_][a-zA-Z0-9_]* {
-    printf("IDENTIFIER: %s\n", yytext); 
-    return IDENTIFIER; 
+[_a-zA-Z]+ {
+    for (char c : std::string(yytext)) {
+        colored_line.emplace_back(c, COLOR_IDENTIFIER); 
+    }   
 }
 
 [0-9]+ {
-    printf("NUMBER: %s\n", yytext); 
-    return NUMBER; 
+    for (char c : std::string(yytext)) {
+        colored_line.emplace_back(c, COLOR_NUMBER); 
+    } 
 }
 
 [ \t\n]+ {
-    // Ignorowanie białych znaków
+    for (char c : std::string(yytext)) {
+        colored_line.emplace_back(c, COLOR_WHITESPACE); 
+    } 
 }
 
 . {
     printf("UNKNOWN: %s\n", yytext); 
-    return UNKNOWN; 
 }
+
 %%
+
+void process_line(const std::string& line) {
+    YY_BUFFER_STATE buffer = yy_scan_string(line.c_str());
+    yylex();
+    yy_delete_buffer(buffer);
+}

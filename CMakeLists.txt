@@ -4,15 +4,22 @@ project(code_editor VERSION 1.0)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-#set(FLEX_FILE ${CMAKE_SOURCE_DIR}/syntax_highlight.l)
-
-#find_package(FLEX REQUIRED)
-#FLEX_TARGET(MyScanner ${FLEX_FILE} ${CMAKE_BINARY_DIR}/lex.yy.c)
-
+### NCURSES
 find_package(Curses REQUIRED)  
-
 include_directories(${CURSES_INCLUDE_DIR})
-#dodajemy jeszcze to co wypuscil flex
-add_executable(code_editor src/main.cpp)
 
+### FLEX
+set(FLEX_FILE src/syntax_highlighter/syntax_highlighter.l)
+find_package(FLEX REQUIRED)
+FLEX_TARGET(SyntaxHighlighter ${FLEX_FILE} syntax_highlighter.cpp)
+include_directories(src/syntax_highlighter/)
+
+### COMPILING
+# Source files
+set(SOURCES
+    ${FLEX_SyntaxHighlighter_OUTPUTS} 
+    src/main.cpp                          # Your main program
+)
+
+add_executable(code_editor ${SOURCES})
 target_link_libraries(code_editor ${CURSES_LIBRARIES})
