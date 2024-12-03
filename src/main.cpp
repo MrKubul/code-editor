@@ -1,5 +1,7 @@
 #include "syntax_highlighter/syntax_highlighter.hpp"
 #include "pattern_finder/pattern_finder.h"
+#include "code_parser/ast.h"
+#include "auto_complete/auto_complete.hpp"
 
 #include <ncurses.h>
 #include <iostream>
@@ -27,8 +29,77 @@ static constexpr uint8_t KEY_ESCAPE = 27;
 static constexpr uint8_t KEY_DELETE = 127;
 static constexpr uint8_t KEY_ENTER2 = 10;
 
-// void save_file(result);
-// void open_file(result);
+std::string get_current_time() {
+    auto now = std::chrono::system_clock::now();
+    auto time_t_now = std::chrono::system_clock::to_time_t(now);
+    auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(
+                            now.time_since_epoch()) % 1000;
+
+    std::ostringstream oss;
+    oss << std::put_time(std::localtime(&time_t_now), "%Y-%m-%d %H:%M:%S")
+        << '.' << std::setfill('0') << std::setw(3) << milliseconds.count();
+    return oss.str();
+}
+
+void log_message(const std::string& message) {
+    std::ofstream log_file("log.txt", std::ios::app);
+    if (log_file.is_open()) {
+        log_file << "[" << get_current_time() << "] " << message << std::endl;
+    }
+}
+
+bool saveToFile(const std::string& fileName) {
+    if (fileName.substr(fileName.find_last_of(".") + 1) != "geb") {
+        log_message("Error: File extension must be .geb\n");
+        return false;
+    }
+
+    std::ofstream outFile(fileName);
+    if (!outFile) {
+        log_message("Error: Could not open file for writing: " + fileName + "\n");
+        return false;
+    }
+
+    for (const auto& line : textBuffer) {
+        outFile << line << '\n';
+    }
+
+    outFile.close();
+    if (!outFile) {
+        log_message("Error: Could not write to file: " + fileName + "\n");
+        return false;
+    }
+
+    return true;
+}
+
+bool openFromFile(const std::string& fileName) {
+    if (fileName.substr(fileName.find_last_of(".") + 1) != "geb") {
+        log_message("Error: File extension must be .geb\n");
+        return false;
+    }
+
+    std::ifstream inFile(fileName);
+    if (!inFile) {
+        log_message("Error: Could not open file for reading: " + fileName + "\n");
+        return false;
+    }
+
+    textBuffer.clear(); // Clear existing content before loading new content
+    std::string line;
+    while (std::getline(inFile, line)) {
+        textBuffer.push_back(line);
+    }
+
+    inFile.close();
+    if (!inFile.eof() && inFile.fail()) {
+        log_message("Error: Could not read file completely: " + fileName + "\n");
+        return false;
+    }
+
+    return true;
+}
+
 void find_pattern(std::string pattern)
 {
     highlighted_characters.clear();
@@ -71,25 +142,6 @@ void init_colors() {
     init_pair(COLOR_COMMENT, COLOR_WHITE, COLOR_BLACK);      // Comments in white
     init_pair(COLOR_HIGHLIGHT, COLOR_WHITE, COLOR_YELLOW);
     init_pair(COLOR_WHITESPACE, COLOR_BLACK, COLOR_BLACK);   // Whitespace in black (invisible)
-}
-
-std::string get_current_time() {
-    auto now = std::chrono::system_clock::now();
-    auto time_t_now = std::chrono::system_clock::to_time_t(now);
-    auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(
-                            now.time_since_epoch()) % 1000;
-
-    std::ostringstream oss;
-    oss << std::put_time(std::localtime(&time_t_now), "%Y-%m-%d %H:%M:%S")
-        << '.' << std::setfill('0') << std::setw(3) << milliseconds.count();
-    return oss.str();
-}
-
-void log_message(const std::string& message) {
-    std::ofstream log_file("log.txt", std::ios::app);
-    if (log_file.is_open()) {
-        log_file << "[" << get_current_time() << "] " << message << std::endl;
-    }
 }
 
 void updateMenuText(WINDOW* menuWin, const std::string& text) {
@@ -215,6 +267,26 @@ void print_colored_line(int y, int x, std::string line)
     colored_line.clear();
 }
 
+void static_analysis()
+{
+    //parse_code();
+    //perform analysis
+    //display results
+}
+
+void autocomplete()
+{
+    //parse_code();
+    //construct triee
+    //analiza zywotnosci zmiennych i kontekstu
+    //display sugesstions
+}
+
+void compile_code()
+{
+    //compiler module should be compiled when we c
+}
+
 void handleInput(int character) 
 {
     switch (character) 
@@ -270,26 +342,39 @@ void handleInput(int character)
         case KEY_F(2):
         {
             std::string result = getUserInput("Enter filename where to save: ");
-            //save_file(result);
+            auto response = saveToFile(result);
         }
             break;
 
         case KEY_F(3):
         {
             std::string result = getUserInput("Enter filename to open: ");
-            //open_file(result;)
+            auto response = openFromFile(result);
         }
             break;
 
         case KEY_F(4):
         {
             std::string result = getUserInput("Enter phrase to find: ");
-            find_pattern(result);
+            if(result == "editor_reset")
+            {
+                highlighted_characters.clear();
+            }
+            else
+            {
+                find_pattern(result);
+            }
         }
             break;
         case KEY_F(5):
+            static_analysis();
+            break;
         case KEY_F(6):
+            autocomplete();
+            break;
         case KEY_F(7):
+            compile_code();
+            break;
         case KEY_F(8):
         case KEY_F(9):
         case KEY_F(10):
@@ -333,7 +418,7 @@ void render() {
     box(menuWin, 0, 0);
 
     // Add menu options
-    mvwprintw(menuWin, 1, 2, "GEBALANG CODE EDITOR | F1: Help  |  F2: Save  |  F3: Open  | F2: Find  | ESC: Exit");
+    mvwprintw(menuWin, 1, 2, "Gebalang EDITOR | F1: Help | F2: Save | F3: Open | F4: Find | F5: Analyze | F6: Autocomplete | F7: Compile | ESC: Exit");
 
     // Refresh the menu window
     wrefresh(menuWin);

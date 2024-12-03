@@ -4,7 +4,6 @@
     #include <memory>
 
     #include "ast.h"
-    #include "../intermediate/ast_optimizer.h"
 
     extern int yylex();
     extern int yyset_in(FILE* in);
