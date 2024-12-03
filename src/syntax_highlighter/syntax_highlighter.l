@@ -20,7 +20,7 @@ std::vector<std::pair<char, int>> colored_line;
     } 
 } 
 
-"PROGRAM"|"PROCEDURE"|"IS"|"IN"|"END"|"ENDIF"|"ELSE"|"THEN"|"DO"|"ENDWHILE"|"REPEAT"|"UNTIL"|"WHILE"|"READ"|"WRITE" { 
+"PROGRAM"|"PROCEDURE"|"IS"|"IN"|"IF"|"END"|"ENDIF"|"ELSE"|"THEN"|"DO"|"ENDWHILE"|"REPEAT"|"UNTIL"|"WHILE"|"READ"|"WRITE" { 
     for (char c : std::string(yytext)) {
         colored_line.emplace_back(c, COLOR_KEYWORD); 
     } 

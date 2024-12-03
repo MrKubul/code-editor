@@ -6,7 +6,7 @@
   #include <iostream>
   #include <string>
   #include "ast.h"
-  #include "compiler.tab.hpp"
+  #include "parser.tab.hpp"
 
 %}
 
