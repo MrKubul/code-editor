@@ -4,19 +4,18 @@
     #include <memory>
 
     #include "ast.h"
+    #include "lexer.hpp"
 
     extern int yylex();
-    extern int yyset_in(FILE* in);
+    // extern int yyset_in(FILE* in);
     extern FILE *yyin;
-    extern int yylineno;
+    // extern int yylineno;
     extern char* yytext;
 
     int yyerror(std::string);
 
-    //AST OF PRORGAM HANDLE
     std::shared_ptr<Program> parsed_program = std::make_shared<Program>();
 
-    //BISON
 %}
 
 %union {

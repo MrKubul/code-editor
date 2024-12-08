@@ -6,7 +6,7 @@
   #include <iostream>
   #include <string>
   #include "ast.h"
-  #include "parser.tab.hpp"
+  #include "../../cmake/parser.tab.hpp"
 
 %}
 

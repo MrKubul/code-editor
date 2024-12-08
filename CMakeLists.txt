@@ -4,41 +4,71 @@ project(code_editor VERSION 1.0)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-# Custom command to build the compiler using its Makefile
-add_custom_command(
-    OUTPUT compiler_built
-    COMMAND ${CMAKE_MAKE_PROGRAM} -C ${CMAKE_SOURCE_DIR}/src/compiler
-    COMMENT "Building compiler in compiler/ directory..."
-    VERBATIM
+find_package(FLEX REQUIRED)
+find_package(BISON REQUIRED)
+
+# # Komenda do skompilowania projektu kompilatora Gebalang
+# add_custom_target(compiler_build ALL
+#     COMMAND ${CMAKE_COMMAND} -E echo "Building compiler..."
+#     COMMAND ${CMAKE_MAKE_PROGRAM}
+#     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/compiler
+# )
+
+# # Komenda do skompilowania projektu maszyny wirtualnej Gebalang
+# add_custom_target(virtual_machine_build ALL
+#     COMMAND ${CMAKE_COMMAND} -E echo "Building virtual_machine..."
+#     COMMAND ${CMAKE_MAKE_PROGRAM}
+#     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/maszyna_wirtualna
+# )
+
+set(SYNTAX_HIGHLIGHTER_DIR ${CMAKE_SOURCE_DIR}/src/syntax_highlighter)
+
+FLEX_TARGET(SyntaxHighlighterLexer
+    ${SYNTAX_HIGHLIGHTER_DIR}/syntax_highlighter.l
+    ${CMAKE_BINARY_DIR}/syntax_highlighter.cpp
+    COMPILE_FLAGS "-P SH_"
+)
+include_directories(${CMAKE_SOURCE_DIR}/src/syntax_highlighter)
+
+# Kompiluje Parser i Lexer języka Gebalang dla Analizatora Składniowego
+set(CODE_PARSER_DIR ${CMAKE_SOURCE_DIR}/src/code_parser)
+
+BISON_TARGET(Parser 
+    ${CODE_PARSER_DIR}/parser.y
+    ${CMAKE_BINARY_DIR}/parser.tab.cpp
+    DEFINES_FILE ${CMAKE_BINARY_DIR}/parser.tab.hpp
+)
+include_directories(${CMAKE_SOURCE_DIR}/src/code_parser)
+
+FLEX_TARGET(Lexer 
+    ${CODE_PARSER_DIR}/lexer.l 
+    ${CMAKE_BINARY_DIR}/lexer.cpp
+    # COMPILE_FLAGS "-P SA_"
 )
 
-# Add the virtual_machine build step
-add_custom_target(virtual_machine_build ALL
-    COMMAND ${CMAKE_COMMAND} -E echo "Building virtual_machine..."
-    COMMAND ${CMAKE_MAKE_PROGRAM}
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/maszyna_wirtualna
-)
-
-# Custom target to trigger the build of the compiler
-add_custom_target(compile_compiler DEPENDS compiler_built)
+# Ensure lexer depends on parser
+add_flex_bison_dependency(Lexer Parser)
 
 ### NCURSES
 find_package(Curses REQUIRED)  
 include_directories(${CURSES_INCLUDE_DIR})
 
-### FLEX
-set(FLEX_FILE src/syntax_highlighter/syntax_highlighter.l)
-find_package(FLEX REQUIRED)
-FLEX_TARGET(SyntaxHighlighter ${FLEX_FILE} syntax_highlighter.cpp)
-include_directories(src/syntax_highlighter/)
-
-### COMPILING
 # Source files
-set(SOURCES
-    ${FLEX_SyntaxHighlighter_OUTPUTS} 
-    src/main.cpp                          # Your main program
+set(SOURCES 
+    ${FLEX_SyntaxHighlighterLexer_OUTPUTS}
+    ${BISON_Parser_OUTPUT_SOURCE}
+    ${FLEX_CodeParserLexer_OUTPUTS}    
+    src/main.cpp     
 )
 
 add_executable(code_editor ${SOURCES})
-add_dependencies(code_editor compile_compiler virtual_machine_build)
-target_link_libraries(code_editor ${CURSES_LIBRARIES})
+
+target_include_directories(code_editor PRIVATE
+    ${CMAKE_BINARY_DIR}          # Includes generated files
+    ${SYNTAX_HIGHLIGHTER_DIR}    # Syntax highlighter headers
+    ${CODE_PARSER_DIR}           
+)
+
+# add_dependencies(code_editor compiler_build virtual_machine_build)
+
+target_link_libraries(code_editor PRIVATE ${FLEX_LIBRARIES} ${CURSES_LIBRARIES})

@@ -19,7 +19,8 @@ extern std::vector<std::pair<char, int>> colored_line;
 void process_line(const std::string& line);
 
 // Forward declaration of Flex functions
-int yylex();
-void yyset_in(FILE *in);
+int SH_yylex();
+void SH_yyset_in(FILE *in);
+
 
 #endif // SYNTAX_HIGHLIGHTER_HPP

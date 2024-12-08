@@ -6,9 +6,6 @@
 #include <optional>
 #include <memory>
 
-//MY AST CODE
-//It matches bison grammar
-
 struct Token
 {
     int line_number;
@@ -16,7 +13,6 @@ struct Token
     std::string* string_value;
 };
 
-//TYPE OF NODE
 enum class NodeType
 {
     NUMBER,

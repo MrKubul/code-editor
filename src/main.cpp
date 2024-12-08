@@ -1,7 +1,10 @@
 #include "syntax_highlighter/syntax_highlighter.hpp"
 #include "pattern_finder/pattern_finder.h"
-#include "code_parser/ast.h"
-#include "auto_complete/auto_complete.hpp"
+#include "code_parser/lexer.hpp"
+//#include "code_parser/cfg_builder.h"
+//#include "static_analyzer/static_analyzer.hpp"
+//#include "auto_complete/trie.hpp"
+#include "../cmake/parser.tab.hpp"
 
 #include <ncurses.h>
 #include <iostream>
@@ -12,9 +15,26 @@
 #include <iomanip>
 #include <fstream>
 #include <locale>
+#include <cstdlib> 
+#include <cstdio> 
+
+std::vector<std::string> keywords = {
+    "PROGRAM", "PROCEDURE", "IS", "IN", "IF", "END", "ENDIF", "ELSE", "THEN", "DO", "ENDWHILE", "REPEAT", "UNTIL", "WHILE", "READ", "WRITE"
+};
 
 std::vector<std::string> textBuffer = {""};
 std::vector<std::pair<int , int>> highlighted_characters;
+//std::vector<Error> analyzer_errors;
+//std::vector<Error> compiler errors;
+
+
+//static Trie autocomplete_trie;
+
+extern int yyparse();
+extern std::shared_ptr<Program> parsed_program;
+
+//extern FILE *SA_yyin;
+extern FILE *yyin;
 
 static int cursorX = 0;
 static int cursorY = 0;
@@ -269,22 +289,63 @@ void print_colored_line(int y, int x, std::string line)
 
 void static_analysis()
 {
-    //parse_code();
-    //perform analysis
-    //display results
+    saveToFile("code.geb");
+    FILE *source = fopen("code.geb", "r");
+    //SA_yyin = source;
+    yyin = source;
+
+    auto x = yyparse();
+    
+    //AstOptimizer static_analyzer;
+
 }
 
-void autocomplete()
+void autocomplete(std::string prefix)
 {
+    // const int LevenshteinDepth = 2;
+    // const std::vector<std::string> suggestions = autocomplete_trie.searchWithLevenshteinDistance(prefix, LevenshteinDepth)
+
+    // std::vector<std::string> results;
+
     //parse_code();
     //construct triee
     //analiza zywotnosci zmiennych i kontekstu
     //display sugesstions
 }
 
-void compile_code()
+std::string executeCommand(const std::string& command) {
+    std::string result;
+    char buffer[128];
+    FILE* pipe = popen(command.c_str(), "r");
+    if (!pipe) {
+        throw std::runtime_error("popen() failed!");
+    }
+    try {
+        while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
+            result += buffer;
+        }
+    } catch (...) {
+        pclose(pipe);
+        throw;
+    }
+    pclose(pipe);
+    return result;
+}
+
+void compile_code(const std::string& inputFile, const std::string& outputFile)
 {
-    //compiler module should be compiled when we c
+    // saveToFile("a.geb");
+    //  // Compile the input file using the compiler
+    // std::string compileCommand = "./compiler/kompilator " + inputFile + " " + outputFile;
+    // int compileStatus = system(compileCommand.c_str());
+
+    // if (compileStatus != 0) {
+    //     throw std::runtime_error("Compilation failed.");
+    // }
+
+    // // Execute the compiled output file using the virtual machine
+    // std::string executeCommandStr = "./maszyna_wirtualna/maszyna-wirtualna " + outputFile;
+    // return executeCommand(executeCommandStr);
 }
 
 void handleInput(int character) 
@@ -367,13 +428,13 @@ void handleInput(int character)
         }
             break;
         case KEY_F(5):
-            static_analysis();
+            //static_analysis();
             break;
         case KEY_F(6):
-            autocomplete();
+            //autocomplete();
             break;
         case KEY_F(7):
-            compile_code();
+            //compile_code();
             break;
         case KEY_F(8):
         case KEY_F(9):
@@ -388,6 +449,17 @@ void handleInput(int character)
     }
 }
 
+// void print_error_on_line(unsigned line, unsigned offset)
+// {
+//     for(auto err : analyzer_errors)
+//     {
+//         if(err.line == line)
+//         {
+//             mvprintw(line, offset, "%s", err.message.c_str());
+//         }
+//     }
+// }
+
 void render() {
     clear();
 
@@ -399,6 +471,8 @@ void render() {
 
         print_colored_line(i, lineNumberWidth, textBuffer[i]);
         //mvprintw(i, lineNumberWidth, "%s", textBuffer[i].c_str());
+
+        //print_error_on_line(i, textBuffer[i].length() + 5 + 1);
     }
 
     highlight_patterns();
@@ -418,16 +492,21 @@ void render() {
     box(menuWin, 0, 0);
 
     // Add menu options
-    mvwprintw(menuWin, 1, 2, "Gebalang EDITOR | F1: Help | F2: Save | F3: Open | F4: Find | F5: Analyze | F6: Autocomplete | F7: Compile | ESC: Exit");
+    mvwprintw(menuWin, 1, 2, "Gebalang EDITOR | F1:Help | F2:Save | F3:Open | F4:Find | F5:Analyze | F6:Autocomplete | F7:Compile | ESC:Exit");
 
-    // Refresh the menu window
     wrefresh(menuWin);
 
-    delwin(menuWin);         // Delete the menu window
+    delwin(menuWin);        
 }
 
 
 int main() {
+
+    // for(const auto& keyword : keywords) {
+    // autocomplete_trie.insert(keyword);
+    // }
+
+    
     setlocale(LC_ALL, "");
     init_main_view();  
 
