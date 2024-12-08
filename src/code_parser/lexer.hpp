@@ -6,8 +6,6 @@
 #include "ast.h"
 #include "parser.tab.hpp"
 
-FILE *yyin;
-
 int yylex();
 void yyset_in(FILE *in);
 extern int yylineno;

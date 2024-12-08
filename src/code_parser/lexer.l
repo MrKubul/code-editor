@@ -5,8 +5,7 @@
 %{
   #include <iostream>
   #include <string>
-  #include "ast.h"
-  #include "../../cmake/parser.tab.hpp"
+  #include "lexer.hpp"
 
 %}
 

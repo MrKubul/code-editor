@@ -4,7 +4,7 @@
 //#include "code_parser/cfg_builder.h"
 //#include "static_analyzer/static_analyzer.hpp"
 //#include "auto_complete/trie.hpp"
-#include "../cmake/parser.tab.hpp"
+#include "code_parser/parser.tab.hpp"
 
 #include <ncurses.h>
 #include <iostream>
